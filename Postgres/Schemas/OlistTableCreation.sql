@@ -277,6 +277,7 @@ INSERT INTO staging.expected_column_types (table_name, column_name, expected_typ
 ('order_items', 'freight_value', 'NUMERIC');
 
 
+
 -------Silver--------------
 DROP TABLE IF EXISTS silver.order_items CASCADE;
 DROP TABLE IF EXISTS silver.sellers CASCADE;
@@ -290,7 +291,7 @@ DROP TABLE IF EXISTS silver.customers CASCADE;
 
 CREATE TABLE silver.customers (
 	customer_id TEXT PRIMARY KEY,
-	customer_unique_id TEXT,
+	customer_unique_id TEXT NOT NULL,
 	customer_zip_code_prefix TEXT,
 	customer_city TEXT,
 	customer_state TEXT
@@ -312,22 +313,22 @@ CREATE TABLE silver.product_category_name_translation (
 CREATE TABLE silver.orders (
 	order_id TEXT PRIMARY KEY,
 	customer_id TEXT NOT NULL REFERENCES silver.customers(customer_id),
-	order_status TEXT,
-	order_purchase_timestamp TIMESTAMP,
-	order_approved_at TIMESTAMP,
-	order_delivered_carrier_date TIMESTAMP,
-	order_delivered_customer_date TIMESTAMP,
-	order_estimated_delivery_date TIMESTAMP
+	order_status TEXT NOT NULL,
+	order_purchase_timestamp TIMESTAMPTZ NOT NULL,
+	order_approved_at TIMESTAMPTZ,
+	order_delivered_carrier_date TIMESTAMPTZ,
+	order_delivered_customer_date TIMESTAMPTZ,
+	order_estimated_delivery_date TIMESTAMPTZ
 );
 
 CREATE TABLE silver.reviews (
 	review_id TEXT PRIMARY KEY,
 	order_id TEXT NOT NULL REFERENCES silver.orders(order_id),
-	review_score INT,
+	review_score INT NOT NULL,
 	review_comment_title TEXT,
 	review_comment_message TEXT,
-	review_creation_date TIMESTAMP,
-	review_answer_timestamp TIMESTAMP
+	review_creation_date TIMESTAMPTZ NOT NULL,
+	review_answer_timestamp TIMESTAMPTZ
 );
 
 CREATE TABLE silver.order_payments (
@@ -335,7 +336,8 @@ CREATE TABLE silver.order_payments (
 	payment_sequential INT,
 	payment_type TEXT,
 	payment_installments INT,
-	payment_value NUMERIC(10,2)
+	payment_value NUMERIC(10,2),
+	PRIMARY KEY (order_id, payment_sequential)
 );
 
 
@@ -345,28 +347,30 @@ CREATE TABLE silver.products (
 	product_name_lenght TEXT,
 	product_description_lenght INT,
 	product_photos_qty INT,
-	product_weight_g INT,
-	product_length_cm INT,
-	product_height_cm INT,
-	product_width_cm INT
+	product_weight_g INT NOT NULL,
+	product_length_cm INT NOT NULL,
+	product_height_cm INT NOT NULL,
+	product_width_cm INT NOT NULL
 );
 
 CREATE TABLE silver.sellers (
 	seller_id TEXT NOT NULL PRIMARY KEY,
-	seller_zip_code_prefix TEXT,
-	seller_city TEXT,
-	seller_state TEXT
+	seller_zip_code_prefix TEXT NOT NULL,
+	seller_city TEXT NOT NULL,
+	seller_state TEXT NOT NULL
 );
 
 CREATE TABLE silver.order_items (
 	order_id TEXT NOT NULL REFERENCES silver.orders(order_id),
-	order_item_id INT,
+	order_item_id INT NOT NULL,
 	product_id TEXT NOT NULL REFERENCES silver.products(product_id),
 	seller_id TEXT NOT NULL REFERENCES silver.sellers(seller_id),
-	shipping_limit_date TIMESTAMP,
-	price NUMERIC(10,2),
-	freight_value NUMERIC(10,2)
+	shipping_limit_date TIMESTAMPTZ,
+	price NUMERIC(10,2) NOT NULL,
+	freight_value NUMERIC(10,2),
+	PRIMARY KEY (order_id, order_item_id)
 );
+
 
 --ERROR Log table for silver.orders---
 CREATE TABLE silver.business_validation_errors_log (
